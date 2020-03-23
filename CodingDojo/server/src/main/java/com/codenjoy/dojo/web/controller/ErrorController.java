@@ -34,7 +34,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author Igor_Petrov@epam.com
+ * @author Igor Petrov
  * Created at 5/23/2019
  */
 @Controller
@@ -43,7 +43,8 @@ public class ErrorController {
 
     public static final String URI = "/error";
 
-    @Autowired private ErrorTicketService ticket;
+    @Autowired 
+    private ErrorTicketService ticket;
 
     @GetMapping(params = "message")
     public String error(HttpServletRequest req, ModelMap model, @RequestParam("message") String message) {

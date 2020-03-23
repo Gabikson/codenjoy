@@ -30,6 +30,7 @@ import com.codenjoy.dojo.services.dao.Players;
 import com.codenjoy.dojo.services.entity.Player;
 import com.codenjoy.dojo.services.entity.PlayerScore;
 import com.codenjoy.dojo.services.entity.ServerLocation;
+import com.codenjoy.dojo.web.security.SecurityContextAuthenticator;
 import com.codenjoy.dojo.web.controller.GlobalExceptionHandler;
 import com.codenjoy.dojo.web.controller.LoginException;
 import com.codenjoy.dojo.web.controller.Validator;
@@ -38,6 +39,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,11 +74,13 @@ public class RestController {
     @Autowired private Validator validator;
     @Autowired private DebugService debug;
     @Autowired private GameServer game;
-    @Autowired private GameServers gameSerers;
+    @Autowired private GameServers gameServers;
     @Autowired private ConfigProperties config;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private SecurityContextAuthenticator securityContextAuthenticator;
 
     // TODO test me
-    @RequestMapping(value = "/score/day/{day}", method = RequestMethod.GET)
+    @GetMapping("/score/day/{day}")
     @ResponseBody
     public List<PlayerScore> dayScores(@PathVariable("day") String day) {
         validator.checkDay(day);
@@ -86,7 +90,7 @@ public class RestController {
 
     // TODO test me
     // TODO add to admin page
-    @RequestMapping(value = "/score/finalists", method = RequestMethod.GET)
+    @GetMapping("/score/finalists")
     @ResponseBody
     public List<PlayerScore> finalistsScores() {
         return dispatcher.getFinalists();
@@ -94,7 +98,7 @@ public class RestController {
 
     // TODO test me
     // TODO add to admin page
-    @RequestMapping(value = "/score/disqualify/{player}", method = RequestMethod.POST)
+    @PostMapping("/score/disqualify/{player}")
     @ResponseBody
     public boolean disqualify(@RequestBody List<String> players) {
         players.stream().forEach(email -> validator.checkEmail(email, CANT_BE_NULL));
@@ -106,13 +110,13 @@ public class RestController {
 
     // TODO test me
     // TODO add to admin page
-    @RequestMapping(value = "/score/disqualified", method = RequestMethod.GET)
+    @GetMapping("/score/disqualified")
     @ResponseBody
     public List<String> disqualified() {
         return dispatcher.disqualified();
     }
 
-    @RequestMapping(value = REGISTER, method = RequestMethod.POST)
+    @PostMapping(REGISTER)
     @ResponseBody
     public ServerLocation register(@RequestBody Player player, HttpServletRequest request) {
         String email = player.getEmail();
@@ -145,8 +149,19 @@ public class RestController {
                 if (location != null) {
                     player.setCode(location.getCode());
                     player.setServer(location.getServer());
-                    players.create(player);
+                    players.create(new Player(
+                            player.getEmail(),
+                            player.getFirstName(),
+                            player.getLastName(),
+                            passwordEncoder.encode(player.getPassword()),
+                            player.getCity(),
+                            player.getSkills(),
+                            player.getComment(),
+                            player.getCode(),
+                            player.getServer()
+                    ));
                 }
+                securityContextAuthenticator.login(request, player.getEmail(), player.getPassword());
                 return location;
             }
         });
@@ -176,7 +191,7 @@ public class RestController {
         T onBalancer(T data);
     }
 
-    @RequestMapping(value = PLAYER + "/{player}/active/{code}", method = RequestMethod.GET)
+    @GetMapping(PLAYER + "/{player}/active/{code}")
     @ResponseBody
     public boolean login(@PathVariable("player") String email,
                          @PathVariable("code") String code)
@@ -187,7 +202,7 @@ public class RestController {
         return dispatcher.exists(player.getEmail());
     }
 
-    @RequestMapping(value = PLAYER + "/{player}/join/{code}", method = RequestMethod.GET)
+    @GetMapping(PLAYER + "/{player}/join/{code}")
     @ResponseBody
     public boolean joinToGameServer(@PathVariable("player") String email,
                                       @PathVariable("code") String code,
@@ -205,7 +220,7 @@ public class RestController {
         return location != null;
     }
 
-    @RequestMapping(value = PLAYER + "/{player}/exit/{code}", method = RequestMethod.GET)
+    @GetMapping(PLAYER + "/{player}/exit/{code}")
     @ResponseBody
     public boolean exitFromGameServer(@PathVariable("player") String email,
                                     @PathVariable("code") String code)
@@ -218,14 +233,16 @@ public class RestController {
                 player.getCode());
     }
 
-    @RequestMapping(value = LOGIN, method = RequestMethod.POST)
+    @PostMapping(LOGIN)
     @ResponseBody
     public ServerLocation login(@RequestBody Player player, HttpServletRequest request) {
         return tryLogin(player, new OnLogin<ServerLocation>(){
 
             @Override
             public ServerLocation onSuccess(ServerLocation data) {
-                return recreatePlayerIfNeeded(data, player.getEmail(), getIp(request));
+                ServerLocation serverLocation = recreatePlayerIfNeeded(data, player.getEmail(), getIp(request));
+                securityContextAuthenticator.login(request, player.getEmail(), player.getPassword());
+                return serverLocation;
             }
 
             @Override
@@ -237,7 +254,7 @@ public class RestController {
     }
 
     // TODO test me
-    @RequestMapping(value = UPDATE, method = RequestMethod.POST)
+    @PostMapping(UPDATE)
     @ResponseBody
     public ServerLocation changePassword(@RequestBody Player player, HttpServletRequest request) {
         return tryLogin(player, new OnLogin<ServerLocation>(){
@@ -330,7 +347,7 @@ public class RestController {
             return false;
         }
 
-        return exist.getPassword().equals(password)
+        return passwordEncoder.matches(password, exist.getPassword())
                 || exist.getCode().equals(code);
     }
 
@@ -359,7 +376,7 @@ public class RestController {
         return result;
     }
 
-    @RequestMapping(value = REMOVE + "/{player}", method = RequestMethod.GET)
+    @GetMapping(REMOVE + "/{player}")
     @ResponseBody
     public boolean remove(@PathVariable("player") String email) {
 
@@ -390,7 +407,7 @@ public class RestController {
     }
 
     // TODO test me
-    @RequestMapping(value = PLAYERS, method = RequestMethod.GET)
+    @GetMapping(PLAYERS)
     @ResponseBody
     public List<Player> getPlayers() {
         return players.getPlayersDetails();
@@ -411,32 +428,32 @@ public class RestController {
     }
 
     // TODO test me
-    @RequestMapping(value = SETTINGS, method = RequestMethod.POST)
+    @PostMapping(SETTINGS)
     @ResponseBody
     public boolean saveSettings(@RequestBody ConfigProperties config) {
 
         this.config.updateFrom(config);
-        gameSerers.update(config.getServers());
+        gameServers.update(config.getServers());
 
         return true;
     }
 
     // TODO test me
-    @RequestMapping(value = SETTINGS, method = RequestMethod.GET)
+    @GetMapping(SETTINGS)
     @ResponseBody
     public ConfigProperties getSettings() {
         return config;
     }
 
     // TODO test me
-    @RequestMapping(value = DEBUG + "/get", method = RequestMethod.GET)
+    @GetMapping(DEBUG + "/get")
     @ResponseBody
     public boolean getDebug() {
         return debug.isWorking();
     }
 
     // TODO test me
-    @RequestMapping(value = DEBUG + "/set/{enabled}", method = RequestMethod.GET)
+    @GetMapping(DEBUG + "/set/{enabled}")
     @ResponseBody
     public boolean setDebug(@PathVariable("enabled") boolean enabled) {
         debug.setDebugEnable(enabled);
@@ -444,7 +461,7 @@ public class RestController {
     }
 
     // TODO test me
-    @RequestMapping(value = CONTEST + "/enable/set/{enabled}", method = RequestMethod.GET)
+    @GetMapping(CONTEST + "/enable/set/{enabled}")
     @ResponseBody
     public List<String> startContestStarted(@PathVariable("enabled") boolean enabled) {
 
@@ -464,14 +481,14 @@ public class RestController {
 
 
     // TODO test me
-    @RequestMapping(value = CONTEST + "/enable/get", method = RequestMethod.GET)
+    @GetMapping(CONTEST + "/enable/get")
     @ResponseBody
     public boolean getContestStarted() {
         return timer.isPaused();
     }
 
     // TODO test me
-    @RequestMapping(value = CACHE + "/clear", method = RequestMethod.GET)
+    @GetMapping(CACHE + "/clear")
     @ResponseBody
     public boolean invalidateCache() {
         dispatcher.clearCache();

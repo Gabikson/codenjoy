@@ -40,6 +40,7 @@ import com.codenjoy.dojo.services.nullobj.NullJoystick;
 import com.codenjoy.dojo.services.nullobj.NullPlayer;
 import com.codenjoy.dojo.services.playerdata.PlayerData;
 import com.codenjoy.dojo.services.printer.BoardReader;
+import com.codenjoy.dojo.services.printer.CharElements;
 import com.codenjoy.dojo.services.printer.PrinterFactory;
 import com.codenjoy.dojo.transport.screen.ScreenRecipient;
 import com.codenjoy.dojo.transport.screen.ScreenSender;
@@ -127,13 +128,18 @@ public class PlayerServiceImplTest {
 
     @Mock
     private GameType gameType;
+    
     @Mock
     private PlayerScores playerScores1;
+    
     @Mock
     private PlayerScores playerScores2;
+    
     @Mock
     private PlayerScores playerScores3;
+    
     private InformationCollector informationCollector;
+    
     @Mock
     private GraphicPrinter printer;
     private List<Joystick> joysticks = new LinkedList<>();
@@ -143,7 +149,7 @@ public class PlayerServiceImplTest {
     private List<PlayerHero> heroesData = new LinkedList<>();
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() {
         Mockito.reset(actionLogger, autoSaver, gameService, playerController, playerGames);
         playerGames.clean();
 
@@ -238,7 +244,7 @@ public class PlayerServiceImplTest {
         };
     }
 
-    enum Elements {
+    enum Elements implements CharElements {
         A('1'), B('2'), C('3'), D('4');
 
         private final char ch;
@@ -250,6 +256,11 @@ public class PlayerServiceImplTest {
         @Override
         public String toString() {
             return String.valueOf(ch);
+        }
+
+        @Override
+        public char ch() {
+            return ch;
         }
     }
 

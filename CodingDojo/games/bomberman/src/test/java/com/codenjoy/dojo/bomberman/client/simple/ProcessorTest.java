@@ -1,10 +1,33 @@
 package com.codenjoy.dojo.bomberman.client.simple;
 
+/*-
+ * #%L
+ * Codenjoy - it's a dojo-like platform from developers to developers.
+ * %%
+ * Copyright (C) 2018 - 2020 Codenjoy
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
+
 import com.codenjoy.dojo.services.Dice;
 import com.codenjoy.dojo.services.Direction;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.file.FileSystems;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,6 +37,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ProcessorTest extends AbstractRuleReaderTest {
+
+    public static final String SEP = FileSystems.getDefault().getSeparator();
 
     private Processor processor;
     private Board board;
@@ -27,7 +52,7 @@ public class ProcessorTest extends AbstractRuleReaderTest {
         errors = new LinkedList<>();
         board = mock(Board.class);
         
-        processor = new Processor("/", mock(Dice.class), this.errors::add) {
+        processor = new Processor("", mock(Dice.class), this.errors::add) {
             @Override
             protected RuleReader getReader() {
                 return reader;
@@ -96,7 +121,7 @@ public class ProcessorTest extends AbstractRuleReaderTest {
         // then
         assertEquals(Direction.STOP, direction);
 
-        assertEquals("[[ERROR] Pattern is not valid: '         BAD RULE' at \\\\main.rule:5]", errors.toString());
+        assertEquals("[[ERROR] Pattern is not valid: '         BAD RULE' at " + SEP + "main.rule:5]", errors.toString());
     }
 
     @Test
