@@ -28,6 +28,7 @@
         <fest-reflect.version>1.4.1</fest-reflect.version>
         <selenium.version>2.53.1</selenium.version>
         <fest-assert.version>1.4</fest-assert.version>
+        <guava.version>28.2-jre</guava.version>
         <!-- end -->
 
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -703,6 +704,11 @@
         <!-- JETTY ENDS -->
 
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>javax.mail-api</artifactId>
         </dependency>
@@ -731,6 +737,17 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>${reflections.version}</version>
+            <!--
+                0.9.12 версия не содержит уже guava но не работает как 0.9.11,
+                которая содержит guava не той версии, что  мы используем в проекте,
+                а потому тут guava исключаем
+             -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.easytesting</groupId>
