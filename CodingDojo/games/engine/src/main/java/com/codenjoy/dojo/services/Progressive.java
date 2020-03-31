@@ -1,10 +1,10 @@
-package com.codenjoy.dojo.services.nullobj;
+package com.codenjoy.dojo.services;
 
 /*-
  * #%L
  * Codenjoy - it's a dojo-like platform from developers to developers.
  * %%
- * Copyright (C) 2018 Codenjoy
+ * Copyright (C) 2018 - 2020 Codenjoy
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,35 +22,10 @@ package com.codenjoy.dojo.services.nullobj;
  * #L%
  */
 
-import com.codenjoy.dojo.services.multiplayer.GameField;
-import com.codenjoy.dojo.services.multiplayer.GamePlayer;
-import com.codenjoy.dojo.services.printer.BoardReader;
+import com.codenjoy.dojo.services.multiplayer.LevelProgress;
 
-public final class NullGameField implements GameField {
+public interface Progressive {
 
-    public static final GameField INSTANCE = new NullGameField();
-
-    private NullGameField() {
-        // do nothing
-    }
-
-    @Override
-    public BoardReader reader() {
-        return NullBoardReader.INSTANCE;
-    }
-
-    @Override
-    public void newGame(GamePlayer player) {
-        // do nothing
-    }
-
-    @Override
-    public void remove(GamePlayer player) {
-        // do nothing
-    }
-
-    @Override
-    public void tick() {
-        // do nothing
-    }
+    void setProgress(LevelProgress progress);
+    LevelProgress getProgress();
 }
